@@ -8,16 +8,16 @@ import { Html } from '@react-email/html';
 import * as React from 'react';
 
 interface TwoFactorAuthTemplateProps {
-	token: string;
+	code: string;
 }
 
-export function TwoFactorAuthTemplate({ token }: TwoFactorAuthTemplateProps) {
+export function TwoFactorAuthTemplate({ code }: TwoFactorAuthTemplateProps) {
 	return (
 		<Tailwind>
 			<Html>
 				<Body className='text-black'>
 					<Heading>Двухфакторная аутентификация</Heading>
-					<Text>Ваш код двухфакторной аутентификации: <strong>{token}</strong></Text>
+					<Text>Ваш код двухфакторной аутентификации: <strong>{code}</strong></Text>
 					<Text>
 						Пожалуйста, введите этот код в приложении для завершения процесса аутентификации.
 					</Text>

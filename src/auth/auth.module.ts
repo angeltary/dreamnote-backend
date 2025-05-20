@@ -1,4 +1,6 @@
 import { getJwtConfig } from '@/config/jwt.config'
+import { EmailModule } from '@/email/email.module'
+import { UserModule } from '@/user/user.module'
 import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
@@ -15,6 +17,8 @@ import { JwtStrategy } from './strategies/jwt.strategy'
       useFactory: getJwtConfig,
       inject: [ConfigService],
     }),
+    UserModule,
+    EmailModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

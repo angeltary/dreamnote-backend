@@ -1,48 +1,36 @@
 import { AuthorizedUser, JwtAuth } from '@/common/decorators'
+import { UserResponse } from '@/user/dto/user.dto'
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, Res } from '@nestjs/common'
-import {
-  ApiBearerAuth,
-  ApiCookieAuth,
-  ApiCreatedResponse,
-  ApiOkResponse,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger'
+import { ApiBearerAuth, ApiCookieAuth, ApiTags } from '@nestjs/swagger'
 import { Request, Response } from 'express'
 import { AuthService } from './auth.service'
-import { LoginRequest, LoginResponse } from './dto/login.dto'
-import { RegisterRequest, RegisterResponse } from './dto/register.dto'
-import { UserResponse } from './dto/user.dto'
+import { LoginRequest } from './dto/login.dto'
+import { RegisterRequest } from './dto/register.dto'
+import { VerifyUserRequest } from './dto/verify-user.dto'
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @ApiOperation({ summary: 'Register User', description: 'Register a new user' })
-  @ApiCreatedResponse({
-    type: RegisterResponse,
-  })
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  async register(@Res({ passthrough: true }) res: Response, @Body() dto: RegisterRequest) {
-    return await this.authService.register(res, dto)
+  async register(@Body() dto: RegisterRequest) {
+    return await this.authService.register(dto)
   }
 
-  @ApiOperation({ summary: 'User Login', description: 'Login a user' })
-  @ApiOkResponse({
-    type: LoginResponse,
-  })
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(@Res({ passthrough: true }) res: Response, @Body() dto: LoginRequest) {
     return await this.authService.login(res, dto)
   }
 
-  @ApiOperation({ summary: 'Refresh Access Token', description: 'Refresh access token' })
-  @ApiOkResponse({
-    type: LoginResponse,
-  })
+  @Post('verify')
+  @HttpCode(HttpStatus.OK)
+  async verify(@Body() dto: VerifyUserRequest) {
+    return await this.authService.verifyCode(dto)
+  }
+
   @ApiCookieAuth()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
@@ -50,10 +38,6 @@ export class AuthController {
     return await this.authService.refresh(req, res)
   }
 
-  @ApiOperation({ summary: 'User Logout', description: 'Logout a user' })
-  @ApiOkResponse({
-    type: Boolean,
-  })
   @ApiCookieAuth()
   @Post('logout')
   @HttpCode(HttpStatus.OK)
@@ -61,10 +45,6 @@ export class AuthController {
     return await this.authService.logout(res)
   }
 
-  @ApiOperation({ summary: 'Get Current User', description: 'Get current user information' })
-  @ApiOkResponse({
-    type: UserResponse,
-  })
   @ApiBearerAuth()
   @JwtAuth()
   @Get('account')

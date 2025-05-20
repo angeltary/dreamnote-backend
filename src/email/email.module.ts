@@ -1,9 +1,9 @@
+import { getMailerConfig } from '@/config/mailer.config'
+import { UserModule } from '@/user/user.module'
 import { MailerModule } from '@nestjs-modules/mailer'
 import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
-
-import { getMailerConfig } from '@/config/mailer.config'
-import { MailService } from './mail.service'
+import { EmailService } from './email.service'
 
 @Module({
   imports: [
@@ -12,7 +12,9 @@ import { MailService } from './mail.service'
       useFactory: getMailerConfig,
       inject: [ConfigService],
     }),
+    UserModule,
   ],
-  providers: [MailService],
+  providers: [EmailService],
+  exports: [EmailService],
 })
-export class MailModule {}
+export class EmailModule {}

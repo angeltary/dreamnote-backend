@@ -4,11 +4,11 @@ import * as React from 'react'
 
 interface ResetPasswordTemplateProps {
   domain: string
-  token: string
+  code: string
 }
 
-export function ResetPasswordTemplate({ domain, token }: ResetPasswordTemplateProps) {
-  // const resetLink = `${domain}/auth/new-password?token=${token}`;
+export function ResetPasswordTemplate({ domain, code }: ResetPasswordTemplateProps) {
+  // const resetLink = `${domain}/auth/new-password?code=${code}`;
   const resetLink = `${domain}/auth/todo`
 
   return (

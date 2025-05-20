@@ -1,9 +1,10 @@
 import { IS_DEV } from '@/common/lib/is-dev'
-import { PrismaService } from '@/infra/prisma/prisma.service'
+import { EmailService } from '@/email/email.service'
+import { UserService } from '@/user/user.service'
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
-  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
@@ -12,6 +13,7 @@ import { hash, verify } from 'argon2'
 import { Request, Response } from 'express'
 import { LoginRequest } from './dto/login.dto'
 import { RegisterRequest } from './dto/register.dto'
+import { VerifyUserRequest } from './dto/verify-user.dto'
 import { JwtPayload } from './interfaces/jwt.interface'
 
 @Injectable()
@@ -22,9 +24,10 @@ export class AuthService {
   private readonly COOKIE_DOMAIN: string
 
   constructor(
-    private readonly prismaService: PrismaService,
+    private readonly userService: UserService,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
+    private readonly emailService: EmailService,
   ) {
     this.JWT_ACCESS_TOKEN_EXPIRATION_TIME = configService.getOrThrow<number>(
       'JWT_ACCESS_TOKEN_EXPIRATION_TIME',
@@ -36,45 +39,47 @@ export class AuthService {
     this.COOKIE_DOMAIN = configService.getOrThrow<string>('COOKIE_DOMAIN')
   }
 
-  async register(res: Response, dto: RegisterRequest) {
+  async register(dto: RegisterRequest) {
     const { name, email, password } = dto
 
-    const existingUser = await this.prismaService.user.findUnique({
-      where: {
-        email,
-      },
-    })
+    const existingUser = await this.userService.findByEmail(email)
 
     if (existingUser) {
       throw new ConflictException('User with this email already exists')
     }
 
-    const user = await this.prismaService.user.create({
-      data: {
-        name,
-        email,
-        password: await hash(password),
-      },
+    const createdUser = await this.userService.create({
+      name,
+      email,
+      password: await hash(password),
     })
 
-    return this.auth(res, user.id)
+    const createdCode = await this.emailService.createVerificationCode(createdUser.id)
+    try {
+      await this.emailService.sendVerificationCode(createdUser.email, createdCode.code)
+    } catch {
+      await this.emailService.deleteVerificationCode(createdCode.id)
+      await this.userService.delete(createdUser.id)
+
+      throw new BadRequestException('Failed to send verification code')
+    }
+
+    return {
+      message: 'Check your email to continue registration process',
+    }
   }
 
   async login(res: Response, dto: LoginRequest) {
     const { email, password } = dto
 
-    const user = await this.prismaService.user.findUnique({
-      where: {
-        email,
-      },
-      select: {
-        id: true,
-        password: true,
-      },
-    })
+    const user = await this.userService.findByEmail(email)
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials')
+    }
+
+    if (!user.isVerified) {
+      throw new UnauthorizedException('User is not verified')
     }
 
     const isPasswordValid = await verify(user.password, password)
@@ -84,6 +89,12 @@ export class AuthService {
     }
 
     return this.auth(res, user.id)
+  }
+
+  async verifyCode(dto: VerifyUserRequest) {
+    const isVerified = await this.emailService.verifyCode(dto.code)
+
+    return isVerified
   }
 
   async refresh(req: Request, res: Response) {
@@ -96,20 +107,12 @@ export class AuthService {
     const payload: JwtPayload = await this.jwtService.verifyAsync(refreshToken)
 
     if (payload.id) {
-      const user = await this.prismaService.user.findUnique({
-        where: {
-          id: payload.id,
-        },
-        select: {
-          id: true,
-        },
-      })
-
-      if (!user) {
-        throw new NotFoundException('User not found')
+      try {
+        const user = await this.userService.findOne(payload.id)
+        return this.auth(res, user.id)
+      } catch {
+        throw new UnauthorizedException('User not found')
       }
-
-      return this.auth(res, user.id)
     }
   }
 
@@ -120,22 +123,16 @@ export class AuthService {
   }
 
   async validate(id: string) {
-    const user = await this.prismaService.user.findUnique({
-      where: {
-        id,
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-      },
-    })
-
-    if (!user) {
+    try {
+      const user = await this.userService.findOne(id)
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+      }
+    } catch {
       throw new UnauthorizedException('User not found')
     }
-
-    return user
   }
 
   private auth(res: Response, id: string) {

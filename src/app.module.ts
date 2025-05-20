@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { AuthModule } from './auth/auth.module'
-import { MailModule } from './infra/mail/mail.module'
-import { PrismaModule } from './infra/prisma/prisma.module'
+import { EmailModule } from './email/email.module'
+import { PrismaModule } from './prisma/prisma.module'
+import { UserModule } from './user/user.module'
 
 @Module({
   imports: [
@@ -11,7 +12,8 @@ import { PrismaModule } from './infra/prisma/prisma.module'
     }),
     PrismaModule,
     AuthModule,
-    MailModule,
+    EmailModule,
+    UserModule,
   ],
 })
 export class AppModule {}
