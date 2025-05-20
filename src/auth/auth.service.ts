@@ -1,5 +1,5 @@
-import { IS_DEV } from '@/common/lib/is-dev'
 import { EmailService } from '@/email/email.service'
+import { IS_DEV } from '@/shared/lib/is-dev'
 import { UserService } from '@/user/user.service'
 import {
   BadRequestException,
@@ -13,6 +13,8 @@ import { hash, verify } from 'argon2'
 import { Request, Response } from 'express'
 import { LoginRequest } from './dto/login.dto'
 import { RegisterRequest } from './dto/register.dto'
+import { RequestPasswordResetRequest } from './dto/request-password-reset.dto'
+import { ResetPasswordRequest } from './dto/reset-password.dto'
 import { VerifyUserRequest } from './dto/verify-user.dto'
 import { JwtPayload } from './interfaces/jwt.interface'
 
@@ -56,7 +58,7 @@ export class AuthService {
 
     const createdCode = await this.emailService.createVerificationCode(createdUser.id)
     try {
-      await this.emailService.sendVerificationCode(createdUser.email, createdCode.code)
+      await this.emailService.sendVerifyRequest(createdUser.email, createdCode.code)
     } catch {
       await this.emailService.deleteVerificationCode(createdCode.id)
       await this.userService.delete(createdUser.id)
@@ -92,9 +94,58 @@ export class AuthService {
   }
 
   async verifyCode(dto: VerifyUserRequest) {
-    const isVerified = await this.emailService.verifyCode(dto.code)
+    const verificationCode = await this.emailService.findVerificationCode(dto.code)
 
-    return isVerified
+    if (!verificationCode) {
+      throw new BadRequestException('Invalid verification code')
+    }
+
+    const user = await this.userService.findOne(verificationCode.userId)
+
+    if (user.isVerified) {
+      throw new ConflictException('User already verified')
+    }
+
+    await this.userService.update(user.id, { isVerified: true })
+    await this.emailService.deleteVerificationCode(verificationCode.id)
+
+    return true
+  }
+
+  async requestPasswordReset(dto: RequestPasswordResetRequest) {
+    const user = await this.userService.findByEmail(dto.email)
+
+    if (!user) {
+      throw new BadRequestException('User not found')
+    }
+
+    const createdCode = await this.emailService.createVerificationCode(user.id)
+    try {
+      await this.emailService.sendVerifyRequest(user.email, createdCode.code)
+    } catch {
+      await this.emailService.deleteVerificationCode(createdCode.id)
+
+      throw new BadRequestException('Failed to send verification code')
+    }
+
+    return {
+      message: 'Check your email to continue password reset process',
+    }
+  }
+
+  async resetPassword(dto: ResetPasswordRequest) {
+    const verificationCode = await this.emailService.findVerificationCode(dto.code)
+
+    if (!verificationCode) {
+      throw new BadRequestException('Invalid verification code')
+    }
+
+    const user = await this.userService.findOne(verificationCode.userId)
+
+    await this.userService.update(user.id, { password: await hash(dto.password) })
+    await this.emailService.deleteVerificationCode(verificationCode.id)
+
+    return true
   }
 
   async refresh(req: Request, res: Response) {

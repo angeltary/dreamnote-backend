@@ -16,8 +16,3 @@ export class RegisterRequest {
   @Length(6, 128)
   password: string
 }
-
-export class RegisterResponse {
-  // accessToken: string
-  
-}

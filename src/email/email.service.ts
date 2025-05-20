@@ -2,9 +2,11 @@ import { ConfirmationTemplate } from '@/email/templates/confirmation.template'
 import { PrismaService } from '@/prisma/prisma.service'
 import { UserService } from '@/user/user.service'
 import { MailerService } from '@nestjs-modules/mailer'
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { render } from '@react-email/components'
+import { v4 as uuidv4 } from 'uuid'
+import { ResetPasswordTemplate } from './templates/reset-password.template'
 
 @Injectable()
 export class EmailService {
@@ -15,16 +17,23 @@ export class EmailService {
     private readonly userService: UserService,
   ) {}
 
-  async sendVerificationCode(email: string, code: string) {
+  async sendVerifyRequest(email: string, code: string) {
     const domain = this.configService.getOrThrow<string>('ALLOWED_ORIGIN')
     const html = await render(ConfirmationTemplate({ domain, code }))
 
     return this.sendMail(email, 'Подтверждение почты', html)
   }
 
+  async sendPasswordResetRequest(email: string, code: string) {
+    const domain = this.configService.getOrThrow<string>('ALLOWED_ORIGIN')
+    const html = await render(ResetPasswordTemplate({ domain, code }))
+
+    return this.sendMail(email, 'Сброс пароля', html)
+  }
+
   async createVerificationCode(userId: string) {
     try {
-      const code = Math.floor(100000 + Math.random() * 900000).toString()
+      const code = uuidv4()
       const expiresAt = new Date()
       expiresAt.setMinutes(expiresAt.getMinutes() + 15)
 
@@ -46,8 +55,8 @@ export class EmailService {
     })
   }
 
-  async verifyCode(code: string) {
-    const verificationCode = await this.prismaService.verificationCode.findFirst({
+  async findVerificationCode(code: string) {
+    return this.prismaService.verificationCode.findFirst({
       where: {
         code,
         expiresAt: {
@@ -55,21 +64,6 @@ export class EmailService {
         },
       },
     })
-
-    if (verificationCode) {
-      const user = await this.userService.findOne(verificationCode.userId)
-
-      if (user.isVerified) {
-        throw new UnauthorizedException('User already verified')
-      }
-
-      await this.userService.update(user.id, { isVerified: true })
-      await this.deleteVerificationCode(verificationCode.id)
-
-      return true
-    }
-
-    return false
   }
 
   private async sendMail(email: string, subject: string, html: string) {

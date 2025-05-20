@@ -8,8 +8,7 @@ interface ResetPasswordTemplateProps {
 }
 
 export function ResetPasswordTemplate({ domain, code }: ResetPasswordTemplateProps) {
-  // const resetLink = `${domain}/auth/new-password?code=${code}`;
-  const resetLink = `${domain}/auth/todo`
+  const resetLink = `${domain}/auth/reset-password?code=${code}`
 
   return (
     <Tailwind>
@@ -17,13 +16,13 @@ export function ResetPasswordTemplate({ domain, code }: ResetPasswordTemplatePro
         <Body className='text-black'>
           <Heading>Сброс пароля</Heading>
           <Text>
-            Привет! Вы запросили сброс пароля. Пожалуйста, перейдите по следующей ссылке,
-            чтобы создать новый пароль:
+            Привет! Ты запросил сброс пароля. Пожалуйста, перейди по следующей ссылке, чтобы
+            создать новый пароль:
           </Text>
-          <Link href={resetLink}>Подтвердить сброс пароля</Link>
+          <Link href={resetLink}>Сбросить пароль</Link>
           <Text>
-            Эта ссылка действительна в течение 1 часа. Если вы не запрашивали сброс пароля,
-            просто проигнорируйте это сообщение.
+            Эта ссылка действительна в течение 15 минут. Если ты не запрашивал сброс пароля,
+            просто проигнорируй это сообщение.
           </Text>
         </Body>
       </Html>
