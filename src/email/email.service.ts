@@ -1,6 +1,5 @@
 import { ConfirmationTemplate } from '@/email/templates/confirmation.template'
 import { PrismaService } from '@/prisma/prisma.service'
-import { UserService } from '@/user/user.service'
 import { MailerService } from '@nestjs-modules/mailer'
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
@@ -14,7 +13,6 @@ export class EmailService {
     private readonly mailerService: MailerService,
     private readonly configService: ConfigService,
     private readonly prismaService: PrismaService,
-    private readonly userService: UserService,
   ) {}
 
   async sendVerifyRequest(email: string, code: string) {
@@ -34,6 +32,7 @@ export class EmailService {
   async createVerificationCode(userId: string) {
     try {
       const code = uuidv4()
+
       const expiresAt = new Date()
       expiresAt.setMinutes(expiresAt.getMinutes() + 15)
 
