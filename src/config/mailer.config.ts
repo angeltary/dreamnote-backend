@@ -1,4 +1,4 @@
-import { IS_DEV } from '@/shared/lib'
+import { IS_DEV } from '@/shared/lib/utils'
 import { MailerOptions } from '@nestjs-modules/mailer'
 import { ConfigService } from '@nestjs/config'
 

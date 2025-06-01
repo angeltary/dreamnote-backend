@@ -5,9 +5,8 @@ import { ApiBearerAuth, ApiCookieAuth, ApiTags } from '@nestjs/swagger'
 import { Request, Response } from 'express'
 import { AuthService } from './auth.service'
 import { LoginRequest } from './dto/login.dto'
+import { RequestPasswordResetRequest, ResetPasswordRequest } from './dto/password-reset.dto'
 import { RegisterRequest } from './dto/register.dto'
-import { RequestPasswordResetRequest } from './dto/request-password-reset.dto'
-import { ResetPasswordRequest } from './dto/reset-password.dto'
 import { VerifyUserRequest } from './dto/verify-user.dto'
 
 @ApiTags('Authentication')

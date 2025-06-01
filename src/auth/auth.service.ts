@@ -1,5 +1,5 @@
 import { EmailService } from '@/email/email.service'
-import { IS_DEV } from '@/shared/lib/is-dev'
+import { IS_DEV } from '@/shared/lib/utils/is-dev'
 import { UserService } from '@/user/user.service'
 import {
   BadRequestException,
@@ -12,9 +12,8 @@ import { JwtService } from '@nestjs/jwt'
 import { hash, verify } from 'argon2'
 import { Request, Response } from 'express'
 import { LoginRequest } from './dto/login.dto'
+import { RequestPasswordResetRequest, ResetPasswordRequest } from './dto/password-reset.dto'
 import { RegisterRequest } from './dto/register.dto'
-import { RequestPasswordResetRequest } from './dto/request-password-reset.dto'
-import { ResetPasswordRequest } from './dto/reset-password.dto'
 import { VerifyUserRequest } from './dto/verify-user.dto'
 import { JwtPayload } from './interfaces/jwt.interface'
 
@@ -121,7 +120,7 @@ export class AuthService {
 
     const createdCode = await this.emailService.createVerificationCode(user.id)
     try {
-      await this.emailService.sendVerifyRequest(user.email, createdCode.code)
+      await this.emailService.sendPasswordResetRequest(user.email, createdCode.code)
     } catch {
       await this.emailService.deleteVerificationCode(createdCode.id)
 

@@ -5,7 +5,7 @@ import * as cookieParser from 'cookie-parser'
 import { AppModule } from './app.module'
 import { getCorsConfig } from './config/cors.config'
 import { LoggingInterceptor } from './shared/interceptors/logging.interceptor'
-import { setupSwagger } from './shared/lib/setup-swagger'
+import { setupSwagger } from './shared/lib/utils/setup-swagger'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)

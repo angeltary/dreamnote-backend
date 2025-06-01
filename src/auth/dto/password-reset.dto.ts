@@ -1,5 +1,11 @@
 import { IsNotEmpty, IsString, Length } from 'class-validator'
 
+export class RequestPasswordResetRequest {
+  @IsString()
+  @IsNotEmpty()
+  email: string
+}
+
 export class ResetPasswordRequest {
   @IsString()
   @IsNotEmpty()
