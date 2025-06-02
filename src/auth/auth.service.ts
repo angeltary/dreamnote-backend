@@ -1,4 +1,6 @@
+import { EmailVerificationCodeService } from '@/email/email-verification-code/email-verification-code.service'
 import { EmailService } from '@/email/email.service'
+import { PasswordResetTokenService } from '@/email/password-reset-token/password-reset-token.service'
 import { IS_DEV } from '@/shared/lib/utils/is-dev'
 import { UserService } from '@/user/user.service'
 import {
@@ -12,8 +14,12 @@ import { JwtService } from '@nestjs/jwt'
 import { hash, verify } from 'argon2'
 import { Request, Response } from 'express'
 import { LoginRequest } from './dto/login.dto'
-import { RequestPasswordResetRequest, ResetPasswordRequest } from './dto/password-reset.dto'
 import { RegisterRequest } from './dto/register.dto'
+import {
+  RequestPasswordResetRequest,
+  ResetPasswordRequest,
+  VerifyPasswordResetRequest,
+} from './dto/reset-password.dto'
 import { VerifyUserRequest } from './dto/verify-user.dto'
 import { JwtPayload } from './interfaces/jwt.interface'
 
@@ -29,6 +35,8 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
+    private readonly emailVerificationCodeService: EmailVerificationCodeService,
+    private readonly passwordResetTokenService: PasswordResetTokenService,
   ) {
     this.JWT_ACCESS_TOKEN_EXPIRATION_TIME = configService.getOrThrow<number>(
       'JWT_ACCESS_TOKEN_EXPIRATION_TIME',
@@ -55,11 +63,16 @@ export class AuthService {
       password: await hash(password),
     })
 
-    const createdCode = await this.emailService.createVerificationCode(createdUser.id)
+    const createdCode = await this.emailVerificationCodeService.createEmailVerificationCode(
+      createdUser.id,
+    )
     try {
-      await this.emailService.sendVerifyRequest(createdUser.email, createdCode.code)
+      await this.emailService.sendEmailConfirmationRequest(
+        createdUser.email,
+        createdCode.code,
+      )
     } catch {
-      await this.emailService.deleteVerificationCode(createdCode.id)
+      await this.emailVerificationCodeService.deleteEmailVerificationCode(createdCode.id)
       await this.userService.delete(createdUser.id)
 
       throw new BadRequestException('Failed to send verification code')
@@ -93,20 +106,23 @@ export class AuthService {
   }
 
   async verifyCode(dto: VerifyUserRequest) {
-    const verificationCode = await this.emailService.findVerificationCode(dto.code)
+    const EmailVerificationCode =
+      await this.emailVerificationCodeService.findEmailVerificationCode(dto.code)
 
-    if (!verificationCode) {
+    if (!EmailVerificationCode) {
       throw new BadRequestException('Invalid verification code')
     }
 
-    const user = await this.userService.findOne(verificationCode.userId)
+    const user = await this.userService.findOne(EmailVerificationCode.userId)
 
     if (user.isVerified) {
       throw new ConflictException('User already verified')
     }
 
     await this.userService.update(user.id, { isVerified: true })
-    await this.emailService.deleteVerificationCode(verificationCode.id)
+    await this.emailVerificationCodeService.deleteEmailVerificationCode(
+      EmailVerificationCode.id,
+    )
 
     return true
   }
@@ -118,31 +134,72 @@ export class AuthService {
       throw new BadRequestException('User not found')
     }
 
-    const createdCode = await this.emailService.createVerificationCode(user.id)
-    try {
-      await this.emailService.sendPasswordResetRequest(user.email, createdCode.code)
-    } catch {
-      await this.emailService.deleteVerificationCode(createdCode.id)
+    const existingToken = await this.passwordResetTokenService.findPasswordResetTokenByEmail(
+      user.email,
+    )
+    if (existingToken) {
+      throw new BadRequestException('Password reset token already exists')
+    }
 
-      throw new BadRequestException('Failed to send verification code')
+    const createdToken = await this.passwordResetTokenService.createPasswordResetToken(
+      user.email,
+    )
+    try {
+      await this.emailService.sendPasswordResetRequest(user.email, createdToken.code)
+    } catch {
+      await this.passwordResetTokenService.deletePasswordResetToken(createdToken.email)
+
+      throw new BadRequestException('Failed to send password reset token')
     }
 
     return {
-      message: 'Check your email to continue password reset process',
+      message: 'Check your email to continue password change process',
     }
   }
 
-  async resetPassword(dto: ResetPasswordRequest) {
-    const verificationCode = await this.emailService.findVerificationCode(dto.code)
+  async verifyPasswordResetToken(dto: VerifyPasswordResetRequest) {
+    const passwordResetToken =
+      await this.passwordResetTokenService.findPasswordResetTokenByCode(dto.code)
 
-    if (!verificationCode) {
-      throw new BadRequestException('Invalid verification code')
+    if (
+      !passwordResetToken ||
+      passwordResetToken.isCodeVerified ||
+      passwordResetToken.isUsed
+    ) {
+      throw new BadRequestException('Invalid password reset token')
     }
 
-    const user = await this.userService.findOne(verificationCode.userId)
+    await this.passwordResetTokenService.updatePasswordResetToken(passwordResetToken.id, {
+      isCodeVerified: true,
+    })
+
+    return { token: passwordResetToken.token }
+  }
+
+  async resetPassword(dto: ResetPasswordRequest) {
+    const passwordResetToken = await this.passwordResetTokenService.findPasswordResetToken(
+      dto.token,
+    )
+
+    if (
+      !passwordResetToken ||
+      !passwordResetToken.isCodeVerified ||
+      passwordResetToken.isUsed
+    ) {
+      throw new BadRequestException('Invalid password reset token')
+    }
+
+    const user = await this.userService.findByEmail(passwordResetToken.email)
+
+    if (!user) {
+      throw new BadRequestException('User not found')
+    }
 
     await this.userService.update(user.id, { password: await hash(dto.password) })
-    await this.emailService.deleteVerificationCode(verificationCode.id)
+
+    await this.passwordResetTokenService.updatePasswordResetToken(passwordResetToken.id, {
+      isUsed: true,
+    })
 
     return true
   }

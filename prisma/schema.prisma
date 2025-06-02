@@ -16,7 +16,7 @@ model User {
 
   isVerified Boolean @default(false) @map("is_verified")
 
-  verificationCode VerificationCode[]
+  emailVerificationCode EmailVerificationCode[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -24,7 +24,7 @@ model User {
   @@map("users")
 }
 
-model VerificationCode {
+model EmailVerificationCode {
   id String @id @default(uuid())
 
   code      String
@@ -36,5 +36,23 @@ model VerificationCode {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  @@map("verification_codes")
+  @@map("email_verification_codes")
+}
+
+model PasswordResetToken {
+  id String @id @default(uuid())
+
+  email String @unique
+  code  String @unique
+  token String @unique
+
+  expiresAt DateTime @map("expires_at")
+
+  isCodeVerified Boolean @default(false) @map("is_code_verified")
+  isUsed         Boolean @default(false) @map("is_used")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("password_reset_tokens")
 }
