@@ -5,7 +5,6 @@ import { EmailVerificationCodeModule } from './email/email-verification-code/ema
 import { EmailModule } from './email/email.module'
 import { PrismaModule } from './prisma/prisma.module'
 import { UserModule } from './user/user.module'
-import { PasswordResetTokenModule } from './email/password-reset-token/password-reset-token.module';
 
 @Module({
   imports: [
@@ -17,7 +16,6 @@ import { PasswordResetTokenModule } from './email/password-reset-token/password-
     EmailModule,
     UserModule,
     EmailVerificationCodeModule,
-    PasswordResetTokenModule,
   ],
 })
 export class AppModule {}

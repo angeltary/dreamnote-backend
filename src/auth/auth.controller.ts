@@ -6,11 +6,7 @@ import { Request, Response } from 'express'
 import { AuthService } from './auth.service'
 import { LoginRequest } from './dto/login.dto'
 import { RegisterRequest } from './dto/register.dto'
-import {
-  RequestPasswordResetRequest,
-  ResetPasswordRequest,
-  VerifyPasswordResetRequest,
-} from './dto/reset-password.dto'
+import { ResetPasswordRequest } from './dto/reset-password.dto'
 import { VerifyUserRequest } from './dto/verify-user.dto'
 
 @ApiTags('Authentication')
@@ -34,22 +30,6 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async verify(@Body() dto: VerifyUserRequest) {
     return await this.authService.verifyCode(dto)
-  }
-
-  @ApiBearerAuth()
-  @JwtAuth()
-  @Post('request-password-reset')
-  @HttpCode(HttpStatus.OK)
-  async requestPasswordReset(@Body() dto: RequestPasswordResetRequest) {
-    return await this.authService.requestPasswordReset(dto)
-  }
-
-  @ApiBearerAuth()
-  @JwtAuth()
-  @Post('verify-password-reset')
-  @HttpCode(HttpStatus.OK)
-  async verifyPasswordReset(@Body() dto: VerifyPasswordResetRequest) {
-    return await this.authService.verifyPasswordResetToken(dto)
   }
 
   @ApiBearerAuth()

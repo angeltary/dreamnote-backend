@@ -1,6 +1,5 @@
 import { EmailVerificationCodeService } from '@/email/email-verification-code/email-verification-code.service'
 import { EmailService } from '@/email/email.service'
-import { PasswordResetTokenService } from '@/email/password-reset-token/password-reset-token.service'
 import { IS_DEV } from '@/shared/lib/utils/is-dev'
 import { UserService } from '@/user/user.service'
 import {
@@ -15,11 +14,7 @@ import { hash, verify } from 'argon2'
 import { Request, Response } from 'express'
 import { LoginRequest } from './dto/login.dto'
 import { RegisterRequest } from './dto/register.dto'
-import {
-  RequestPasswordResetRequest,
-  ResetPasswordRequest,
-  VerifyPasswordResetRequest,
-} from './dto/reset-password.dto'
+import { ResetPasswordRequest } from './dto/reset-password.dto'
 import { VerifyUserRequest } from './dto/verify-user.dto'
 import { JwtPayload } from './interfaces/jwt.interface'
 
@@ -36,7 +31,6 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
     private readonly emailVerificationCodeService: EmailVerificationCodeService,
-    private readonly passwordResetTokenService: PasswordResetTokenService,
   ) {
     this.JWT_ACCESS_TOKEN_EXPIRATION_TIME = configService.getOrThrow<number>(
       'JWT_ACCESS_TOKEN_EXPIRATION_TIME',
@@ -127,79 +121,14 @@ export class AuthService {
     return true
   }
 
-  async requestPasswordReset(dto: RequestPasswordResetRequest) {
+  async resetPassword(dto: ResetPasswordRequest) {
     const user = await this.userService.findByEmail(dto.email)
 
     if (!user) {
       throw new BadRequestException('User not found')
     }
 
-    const existingToken = await this.passwordResetTokenService.findPasswordResetTokenByEmail(
-      user.email,
-    )
-    if (existingToken) {
-      throw new BadRequestException('Password reset token already exists')
-    }
-
-    const createdToken = await this.passwordResetTokenService.createPasswordResetToken(
-      user.email,
-    )
-    try {
-      await this.emailService.sendPasswordResetRequest(user.email, createdToken.code)
-    } catch {
-      await this.passwordResetTokenService.deletePasswordResetToken(createdToken.email)
-
-      throw new BadRequestException('Failed to send password reset token')
-    }
-
-    return {
-      message: 'Check your email to continue password change process',
-    }
-  }
-
-  async verifyPasswordResetToken(dto: VerifyPasswordResetRequest) {
-    const passwordResetToken =
-      await this.passwordResetTokenService.findPasswordResetTokenByCode(dto.code)
-
-    if (
-      !passwordResetToken ||
-      passwordResetToken.isCodeVerified ||
-      passwordResetToken.isUsed
-    ) {
-      throw new BadRequestException('Invalid password reset token')
-    }
-
-    await this.passwordResetTokenService.updatePasswordResetToken(passwordResetToken.id, {
-      isCodeVerified: true,
-    })
-
-    return { token: passwordResetToken.token }
-  }
-
-  async resetPassword(dto: ResetPasswordRequest) {
-    const passwordResetToken = await this.passwordResetTokenService.findPasswordResetToken(
-      dto.token,
-    )
-
-    if (
-      !passwordResetToken ||
-      !passwordResetToken.isCodeVerified ||
-      passwordResetToken.isUsed
-    ) {
-      throw new BadRequestException('Invalid password reset token')
-    }
-
-    const user = await this.userService.findByEmail(passwordResetToken.email)
-
-    if (!user) {
-      throw new BadRequestException('User not found')
-    }
-
     await this.userService.update(user.id, { password: await hash(dto.password) })
-
-    await this.passwordResetTokenService.updatePasswordResetToken(passwordResetToken.id, {
-      isUsed: true,
-    })
 
     return true
   }

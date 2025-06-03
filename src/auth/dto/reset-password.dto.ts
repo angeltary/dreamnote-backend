@@ -1,31 +1,12 @@
-import { IsEmail, IsNotEmpty, IsString, Length } from 'class-validator'
-
-export class RequestPasswordResetRequest {
-  @IsString()
-  @IsNotEmpty()
-  @IsEmail()
-  email: string
-}
+import { IsNotEmpty, IsString, Length } from 'class-validator'
 
 export class ResetPasswordRequest {
   @IsString()
   @IsNotEmpty()
-  token: string
+  email: string
 
   @IsString()
   @IsNotEmpty()
   @Length(6, 128)
   password: string
-}
-
-export class VerifyPasswordResetRequest {
-  @IsString()
-  @IsNotEmpty()
-  code: string
-}
-
-export class VerifyPasswordResetResponse {
-  @IsString()
-  @IsNotEmpty()
-  token: string
 }

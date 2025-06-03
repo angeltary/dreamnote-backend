@@ -1,7 +1,6 @@
 import { getJwtConfig } from '@/config/jwt.config'
 import { EmailVerificationCodeModule } from '@/email/email-verification-code/email-verification-code.module'
 import { EmailModule } from '@/email/email.module'
-import { PasswordResetTokenModule } from '@/email/password-reset-token/password-reset-token.module'
 import { UserModule } from '@/user/user.module'
 import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
@@ -22,7 +21,6 @@ import { JwtStrategy } from './strategies/jwt.strategy'
     UserModule,
     EmailModule,
     EmailVerificationCodeModule,
-    PasswordResetTokenModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

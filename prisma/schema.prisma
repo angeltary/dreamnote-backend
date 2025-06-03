@@ -38,21 +38,3 @@ model EmailVerificationCode {
 
   @@map("email_verification_codes")
 }
-
-model PasswordResetToken {
-  id String @id @default(uuid())
-
-  email String @unique
-  code  String @unique
-  token String @unique
-
-  expiresAt DateTime @map("expires_at")
-
-  isCodeVerified Boolean @default(false) @map("is_code_verified")
-  isUsed         Boolean @default(false) @map("is_used")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  @@map("password_reset_tokens")
-}

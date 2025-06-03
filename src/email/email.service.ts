@@ -3,7 +3,6 @@ import { MailerService } from '@nestjs-modules/mailer'
 import { Injectable } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { render } from '@react-email/components'
-import { ResetPasswordTemplate } from './templates/reset-password.template'
 
 @Injectable()
 export class EmailService {
@@ -17,12 +16,6 @@ export class EmailService {
     const html = await render(EmailConfirmationTemplate({ domain, code }))
 
     return this.sendMail(email, 'Подтверждение почты', html)
-  }
-
-  async sendPasswordResetRequest(email: string, code: string) {
-    const html = await render(ResetPasswordTemplate({ code }))
-
-    return this.sendMail(email, 'Сброс пароля', html)
   }
 
   private async sendMail(email: string, subject: string, html: string) {
