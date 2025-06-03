@@ -4,23 +4,23 @@ import { ConfigService } from '@nestjs/config'
 import { v4 as uuidv4 } from 'uuid'
 
 @Injectable()
-export class EmailVerificationCodeService {
+export class VerificationService {
   public constructor(
     private readonly prismaService: PrismaService,
     private readonly configService: ConfigService,
   ) {}
 
-  async createEmailVerificationCode(userId: string) {
+  async createVerificationCode(userId: string) {
     try {
       const code = uuidv4()
 
       const expiresAt = new Date()
       expiresAt.setMinutes(
         expiresAt.getMinutes() +
-          this.configService.getOrThrow<number>('EMAIL_VERIFICATION_CODE_EXPIRATION_TIME'),
+          this.configService.getOrThrow<number>('VERIFICATION_CODE_EXPIRATION_TIME'),
       )
 
-      return await this.prismaService.emailVerificationCode.create({
+      return await this.prismaService.verificationCode.create({
         data: {
           code,
           expiresAt,
@@ -32,14 +32,14 @@ export class EmailVerificationCodeService {
     }
   }
 
-  async deleteEmailVerificationCode(id: string) {
-    return await this.prismaService.emailVerificationCode.delete({
+  async deleteVerificationCode(id: string) {
+    return await this.prismaService.verificationCode.delete({
       where: { id },
     })
   }
 
-  async findEmailVerificationCode(code: string) {
-    return this.prismaService.emailVerificationCode.findFirst({
+  async findVerificationCode(code: string) {
+    return this.prismaService.verificationCode.findFirst({
       where: {
         code,
         expiresAt: {
@@ -49,8 +49,8 @@ export class EmailVerificationCodeService {
     })
   }
 
-  async findEmailVerificationCodeByUserId(userId: string) {
-    return this.prismaService.emailVerificationCode.findFirst({
+  async findVerificationCodeByUserId(userId: string) {
+    return this.prismaService.verificationCode.findFirst({
       where: {
         userId,
         expiresAt: {

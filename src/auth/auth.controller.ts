@@ -1,4 +1,4 @@
-import { AuthorizedUser, JwtAuth } from '@/shared/decorators'
+import { AuthorizedUser, JwtAuth } from '@/common/decorators'
 import { UserResponse } from '@/user/dto/user.dto'
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, Req, Res } from '@nestjs/common'
 import { ApiBearerAuth, ApiCookieAuth, ApiTags } from '@nestjs/swagger'
@@ -29,7 +29,7 @@ export class AuthController {
   @Post('verify')
   @HttpCode(HttpStatus.OK)
   async verify(@Body() dto: VerifyUserRequest) {
-    return await this.authService.verifyCode(dto)
+    return await this.authService.verifyEmail(dto)
   }
 
   @ApiBearerAuth()

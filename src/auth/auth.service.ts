@@ -1,7 +1,7 @@
-import { EmailVerificationCodeService } from '@/email/email-verification-code/email-verification-code.service'
+import { IS_DEV } from '@/common/lib/is-dev'
 import { EmailService } from '@/email/email.service'
-import { IS_DEV } from '@/shared/lib/utils/is-dev'
 import { UserService } from '@/user/user.service'
+import { VerificationService } from '@/verification/verification.service'
 import {
   BadRequestException,
   ConflictException,
@@ -30,7 +30,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly emailService: EmailService,
-    private readonly emailVerificationCodeService: EmailVerificationCodeService,
+    private readonly verificationService: VerificationService,
   ) {
     this.JWT_ACCESS_TOKEN_EXPIRATION_TIME = configService.getOrThrow<number>(
       'JWT_ACCESS_TOKEN_EXPIRATION_TIME',
@@ -57,16 +57,14 @@ export class AuthService {
       password: await hash(password),
     })
 
-    const createdCode = await this.emailVerificationCodeService.createEmailVerificationCode(
-      createdUser.id,
-    )
+    const createdCode = await this.verificationService.createVerificationCode(createdUser.id)
     try {
       await this.emailService.sendEmailConfirmationRequest(
         createdUser.email,
         createdCode.code,
       )
     } catch {
-      await this.emailVerificationCodeService.deleteEmailVerificationCode(createdCode.id)
+      await this.verificationService.deleteVerificationCode(createdCode.id)
       await this.userService.delete(createdUser.id)
 
       throw new BadRequestException('Failed to send verification code')
@@ -99,24 +97,21 @@ export class AuthService {
     return this.auth(res, user.id)
   }
 
-  async verifyCode(dto: VerifyUserRequest) {
-    const EmailVerificationCode =
-      await this.emailVerificationCodeService.findEmailVerificationCode(dto.code)
+  async verifyEmail(dto: VerifyUserRequest) {
+    const verificationCode = await this.verificationService.findVerificationCode(dto.code)
 
-    if (!EmailVerificationCode) {
+    if (!verificationCode) {
       throw new BadRequestException('Invalid verification code')
     }
 
-    const user = await this.userService.findOne(EmailVerificationCode.userId)
+    const user = await this.userService.findOne(verificationCode.userId)
 
     if (user.isVerified) {
       throw new ConflictException('User already verified')
     }
 
     await this.userService.update(user.id, { isVerified: true })
-    await this.emailVerificationCodeService.deleteEmailVerificationCode(
-      EmailVerificationCode.id,
-    )
+    await this.verificationService.deleteVerificationCode(verificationCode.id)
 
     return true
   }

@@ -13,5 +13,7 @@ export class LoginRequest {
 }
 
 export class LoginResponse {
+  @IsString()
+  @IsNotEmpty()
   accessToken: string
 }
