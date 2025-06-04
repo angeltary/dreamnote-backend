@@ -1,21 +1,17 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
-import { AuthModule } from './auth/auth.module'
-import { EmailModule } from './email/email.module'
-import { PrismaModule } from './prisma/prisma.module'
-import { UserModule } from './user/user.module'
-import { VerificationModule } from './verification/verification.module'
+import { ApiModule } from './api/api.module'
+import { InfraModule } from './infra/infra.module'
+import { LibsModule } from './libs/libs.module'
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    PrismaModule,
-    AuthModule,
-    EmailModule,
-    UserModule,
-    VerificationModule,
+    ApiModule,
+    InfraModule,
+    LibsModule,
   ],
 })
 export class AppModule {}

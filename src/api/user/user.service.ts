@@ -1,7 +1,7 @@
-import { RegisterRequest } from '@/auth/dto/register.dto'
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { User } from '@prisma/client'
-import { PrismaService } from '../prisma/prisma.service'
+import { PrismaService } from '../../infra/prisma/prisma.service'
+import { RegisterRequest } from '../auth/dto'
 
 @Injectable()
 export class UserService {
@@ -23,7 +23,7 @@ export class UserService {
     return user
   }
 
-  async findByEmail(email: string) {
+  async findByMail(email: string) {
     return this.prismaService.user.findUnique({
       where: { email },
     })

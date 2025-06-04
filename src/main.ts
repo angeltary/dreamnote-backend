@@ -4,7 +4,7 @@ import { NestFactory } from '@nestjs/core'
 import * as cookieParser from 'cookie-parser'
 import { AppModule } from './app.module'
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor'
-import { setupSwagger } from './common/lib/setup-swagger'
+import { setupSwagger } from './common/utils/setup-swagger'
 import { getCorsConfig } from './config/cors.config'
 
 async function bootstrap() {

@@ -1,7 +1,8 @@
-import { IS_DEV } from '@/common/lib/is-dev'
-import { EmailService } from '@/email/email.service'
-import { UserService } from '@/user/user.service'
-import { VerificationService } from '@/verification/verification.service'
+import { UserService } from '@/api/user/user.service'
+import { JwtPayload } from '@/common/interfaces/jwt.interface'
+import { IS_DEV } from '@/common/utils/is-dev'
+import { MailService } from '@/libs/mail/mail.service'
+import { VerificationService } from '@/libs/verification/verification.service'
 import {
   BadRequestException,
   ConflictException,
@@ -12,11 +13,7 @@ import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { hash, verify } from 'argon2'
 import { Request, Response } from 'express'
-import { LoginRequest } from './dto/login.dto'
-import { RegisterRequest } from './dto/register.dto'
-import { ResetPasswordRequest } from './dto/reset-password.dto'
-import { VerifyUserRequest } from './dto/verify-user.dto'
-import { JwtPayload } from './interfaces/jwt.interface'
+import { LoginRequest, RegisterRequest, ResetPasswordRequest, VerifyUserRequest } from './dto'
 
 @Injectable()
 export class AuthService {
@@ -29,7 +26,7 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
-    private readonly emailService: EmailService,
+    private readonly mailService: MailService,
     private readonly verificationService: VerificationService,
   ) {
     this.JWT_ACCESS_TOKEN_EXPIRATION_TIME = configService.getOrThrow<number>(
@@ -45,7 +42,7 @@ export class AuthService {
   async register(dto: RegisterRequest) {
     const { name, email, password } = dto
 
-    const existingUser = await this.userService.findByEmail(email)
+    const existingUser = await this.userService.findByMail(email)
 
     if (existingUser) {
       throw new ConflictException('User with this email already exists')
@@ -59,10 +56,7 @@ export class AuthService {
 
     const createdCode = await this.verificationService.createVerificationCode(createdUser.id)
     try {
-      await this.emailService.sendEmailConfirmationRequest(
-        createdUser.email,
-        createdCode.code,
-      )
+      await this.mailService.sendEmailVerification(createdUser.email, createdCode.code)
     } catch {
       await this.verificationService.deleteVerificationCode(createdCode.id)
       await this.userService.delete(createdUser.id)
@@ -78,7 +72,7 @@ export class AuthService {
   async login(res: Response, dto: LoginRequest) {
     const { email, password } = dto
 
-    const user = await this.userService.findByEmail(email)
+    const user = await this.userService.findByMail(email)
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials')
@@ -97,7 +91,7 @@ export class AuthService {
     return this.auth(res, user.id)
   }
 
-  async verifyEmail(dto: VerifyUserRequest) {
+  async verifyMail(dto: VerifyUserRequest) {
     const verificationCode = await this.verificationService.findVerificationCode(dto.code)
 
     if (!verificationCode) {
@@ -117,7 +111,7 @@ export class AuthService {
   }
 
   async resetPassword(dto: ResetPasswordRequest) {
-    const user = await this.userService.findByEmail(dto.email)
+    const user = await this.userService.findByMail(dto.email)
 
     if (!user) {
       throw new BadRequestException('User not found')

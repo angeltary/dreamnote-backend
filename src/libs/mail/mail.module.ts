@@ -1,9 +1,10 @@
 import { getMailerConfig } from '@/config/mailer.config'
 import { MailerModule } from '@nestjs-modules/mailer'
-import { Module } from '@nestjs/common'
+import { Global, Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
-import { EmailService } from './email.service'
+import { MailService } from './mail.service'
 
+@Global()
 @Module({
   imports: [
     MailerModule.forRootAsync({
@@ -12,7 +13,7 @@ import { EmailService } from './email.service'
       inject: [ConfigService],
     }),
   ],
-  providers: [EmailService],
-  exports: [EmailService],
+  providers: [MailService],
+  exports: [MailService],
 })
-export class EmailModule {}
+export class MailModule {}

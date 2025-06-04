@@ -2,12 +2,12 @@ import { Body, Heading, Link, Tailwind, Text } from '@react-email/components'
 import { Html } from '@react-email/html'
 import * as React from 'react'
 
-interface EmailConfirmationTemplateProps {
+interface EmailVerificationTemplateProps {
   domain: string
   code: string
 }
 
-export function EmailConfirmationTemplate({ domain, code }: EmailConfirmationTemplateProps) {
+export function EmailVerificationTemplate({ domain, code }: EmailVerificationTemplateProps) {
   const confirmLink = `${domain}/auth/verify?code=${code}`
 
   return (
