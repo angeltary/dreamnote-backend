@@ -1,4 +1,4 @@
-import { UserService } from '@/api/user/user.service'
+import { UsersService } from '@/api/user/users.service'
 import { JwtPayload } from '@/common/interfaces/jwt.interface'
 import { IS_DEV } from '@/common/utils/is-dev'
 import { MailService } from '@/libs/mail/mail.service'
@@ -23,7 +23,7 @@ export class AuthService {
   private readonly COOKIE_DOMAIN: string
 
   constructor(
-    private readonly userService: UserService,
+    private readonly userService: UsersService,
     private readonly configService: ConfigService,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,

@@ -2,15 +2,15 @@ import { UserResponse } from '@/api/user/dto/user.dto'
 import { AuthorizedUser, JwtAuth } from '@/common/decorators'
 import { Controller, Get, HttpCode, HttpStatus } from '@nestjs/common'
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger'
-import { UserService } from './user.service'
+import { UsersService } from './users.service'
 
-@ApiTags('User')
-@Controller('user')
-export class UserController {
-  constructor(private readonly userService: UserService) {}
+@ApiTags('Users')
+@Controller('users')
+@ApiBearerAuth()
+@JwtAuth()
+export class UsersController {
+  constructor(private readonly userService: UsersService) {}
 
-  @ApiBearerAuth()
-  @JwtAuth()
   @Get('@me')
   @HttpCode(HttpStatus.OK)
   async me(@AuthorizedUser() user: UserResponse) {
