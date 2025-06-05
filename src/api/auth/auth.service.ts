@@ -13,6 +13,7 @@ import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { hash, verify } from 'argon2'
 import { Request, Response } from 'express'
+import { NotesService } from '../note/notes.service'
 import { LoginRequest, RegisterRequest, ResetPasswordRequest, VerifyUserRequest } from './dto'
 
 @Injectable()
@@ -28,6 +29,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
     private readonly verificationService: VerificationService,
+    private readonly notesService: NotesService,
   ) {
     this.JWT_ACCESS_TOKEN_EXPIRATION_TIME = configService.getOrThrow<number>(
       'JWT_ACCESS_TOKEN_EXPIRATION_TIME',
@@ -106,6 +108,11 @@ export class AuthService {
 
     await this.userService.update(user.id, { isVerified: true })
     await this.verificationService.deleteVerificationCode(verificationCode.id)
+
+    await this.notesService.create(user.id, {
+      title: 'Dreamnote 101',
+      content: 'Привет, это твоя первая заметка!',
+    })
 
     return true
   }
