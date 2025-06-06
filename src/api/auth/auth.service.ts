@@ -1,4 +1,3 @@
-import { UsersService } from '@/api/user/users.service'
 import { JwtPayload } from '@/common/interfaces/jwt.interface'
 import { IS_DEV } from '@/common/utils/is-dev'
 import { MailService } from '@/libs/mail/mail.service'
@@ -13,7 +12,8 @@ import { ConfigService } from '@nestjs/config'
 import { JwtService } from '@nestjs/jwt'
 import { hash, verify } from 'argon2'
 import { Request, Response } from 'express'
-import { NotesService } from '../note/notes.service'
+import { NotesService } from '../notes/notes.service'
+import { UsersService } from '../users/users.service'
 import { LoginRequest, RegisterRequest, ResetPasswordRequest, VerifyUserRequest } from './dto'
 
 @Injectable()

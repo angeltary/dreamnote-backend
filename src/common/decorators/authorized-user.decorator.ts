@@ -1,4 +1,4 @@
-import { UserResponse } from '@/api/user/dto/user.dto'
+import { UserResponse } from '@/api/users/dto'
 import { createParamDecorator, ExecutionContext } from '@nestjs/common'
 
 export const AuthorizedUser = createParamDecorator(

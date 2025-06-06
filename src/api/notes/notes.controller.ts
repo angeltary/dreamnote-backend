@@ -11,7 +11,7 @@ import {
   Post,
 } from '@nestjs/common'
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger'
-import { UserResponse } from '../user/dto'
+import { UserResponse } from '../users/dto'
 import { CreateNoteRequest, UpdateNoteRequest } from './dto'
 import { NotesService } from './notes.service'
 

@@ -1,7 +1,7 @@
-import { UserResponse } from '@/api/user/dto/user.dto'
 import { AuthorizedUser, JwtAuth } from '@/common/decorators'
 import { Controller, Get, HttpCode, HttpStatus } from '@nestjs/common'
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger'
+import { UserResponse } from './dto'
 import { UsersService } from './users.service'
 
 @ApiTags('Users')
