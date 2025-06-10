@@ -1,18 +1,18 @@
-FROM node:20.12.0 AS base
+FROM node:20-alpine AS base
 
 FROM base AS builder
 
 WORKDIR /app
 
-COPY package.json yarn.lock ./
+COPY package.json bun.lockb ./
 
-RUN yarn install
+RUN npm install
 
 COPY . .
 
-RUN yarn prisma generate
+RUN npx prisma generate
 
-RUN yarn build
+RUN npm run build
 
 FROM base AS runner
 
@@ -20,11 +20,18 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY --chown=nodejs:nodejs package.json yarn.lock ./
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nestjs
 
-RUN yarn install --production
+COPY --chown=nestjs:nodejs package.json ./
 
-COPY --chown=nodejs:nodejs --from=builder /app/dist ./dist
-COPY --chown=nodejs:nodejs --from=builder /app/prisma/generated ./prisma/generated
+RUN npm ci --only=production && npm cache clean --force
 
-CMD ["node", "dist/main"]
+COPY --chown=nestjs:nodejs --from=builder /app/dist ./dist
+COPY --chown=nestjs:nodejs --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
+USER nestjs
+
+EXPOSE 3000
+
+CMD ["node", "dist/main.js"]
